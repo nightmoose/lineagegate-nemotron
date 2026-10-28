@@ -1,0 +1,7 @@
+id,name,title,tool
+dashboard:finance.revenue_daily,finance.revenue_daily,Daily Revenue,BI
+dashboard:finance.cash_reconciliation,finance.cash_reconciliation,Cash Reconciliation,BI
+dashboard:exec.kpi_overview,exec.kpi_overview,Executive KPI Overview,BI
+dashboard:cx.support_health,cx.support_health,Support Health,BI
+dashboard:growth.marketing_roi,growth.marketing_roi,Marketing ROI,BI
+dashboard:crm.customer_360,crm.customer_360,Customer 360,BI

@@ -1,0 +1,7 @@
+id,name,layer,source
+table:raw.shopify_orders,raw.shopify_orders,raw,shopify
+table:raw.shopify_order_items,raw.shopify_order_items,raw,shopify
+table:raw.stripe_payments,raw.stripe_payments,raw,stripe
+table:raw.crm_customers,raw.crm_customers,raw,hubspot
+table:raw.zendesk_tickets,raw.zendesk_tickets,raw,zendesk
+table:raw.ad_spend,raw.ad_spend,raw,google_ads

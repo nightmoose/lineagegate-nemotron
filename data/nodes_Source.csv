@@ -1,0 +1,6 @@
+id,name,kind
+source:shopify,Shopify storefront,saas
+source:stripe,Stripe payments,saas
+source:hubspot,HubSpot CRM,saas
+source:zendesk,Zendesk support,saas
+source:google_ads,Google Ads,saas

@@ -1,0 +1,9 @@
+src_label,src,dst_label,dst
+Dashboard,dashboard:finance.revenue_daily,Model,model:mart_finance_revenue
+Dashboard,dashboard:finance.cash_reconciliation,Model,model:mart_cash_reconciliation
+Dashboard,dashboard:exec.kpi_overview,Model,model:fct_revenue_daily
+Dashboard,dashboard:exec.kpi_overview,Model,model:mart_customers
+Dashboard,dashboard:cx.support_health,Model,model:mart_support_health
+Dashboard,dashboard:growth.marketing_roi,Model,model:mart_marketing_roi
+Dashboard,dashboard:crm.customer_360,Model,model:mart_customers
+Dashboard,dashboard:crm.customer_360,Model,model:mart_customer_ltv
