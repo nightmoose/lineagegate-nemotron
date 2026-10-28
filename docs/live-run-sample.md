@@ -1,12 +1,30 @@
 # Live run samples (sanitized)
 
 - **Date:** 2026-10-28 (America/New_York)
-- **Provider:** NVIDIA API (`--provider nvidia`, `https://integrate.api.nvidia.com/v1`, OpenAI-compatible tool calling)
+- **Providers:** Nebius Token Factory (`--provider nebius`, `https://api.tokenfactory.nebius.com/v1`, model `nvidia/nemotron-3-super-120b-a12b`) for run 0; NVIDIA API (`--provider nvidia`, `https://integrate.api.nvidia.com/v1`, OpenAI-compatible tool calling)
 - **Model:** `nvidia/nemotron-3-ultra-550b-a55b`
-- No API keys appear in this file. The Nebius Token Factory path (`--provider nebius`) runs the same code; see the README for why
-  this demo ran on NVIDIA's endpoint.
+- No API keys appear in this file. Runs 1–2 below used NVIDIA's endpoint, the alternate host; run 0 is the Token Factory live demo.
 
 Both planted defects were caught live, each by its own command (they sit on different lineage branches).
+
+## 0. Token Factory: `lgnemo check stg_orders.amount --change "switch to integer cents" --provider nebius` (40 s)
+
+Nemotron Super on Nebius Token Factory: 9 tool calls, 12 model calls, 79,915 tokens (75,381 prompt / 4,534 completion).
+Verdict: **HOLD** — the switch to cents makes every downstream dollar field 100× too large; notify @priya (on-call) and @marcus
+and the `finance_analytics` team. Super ran the null, grain and non-negative checks below; the `accepted_range` test (which
+surfaces the planted cents-vs-dollars rows) was not run in this pass. Ultra's run 1 below runs it and flags the 2 rows.
+
+| # | tool | contract | status | rows | SQL written by the model |
+|---|---|---|---|---|---|
+| 1 | `impact` |  | ok |  | `` |
+| 2 | `owners` |  | ok |  | `` |
+| 3 | `impact` |  | ok |  | `` |
+| 4 | `impact` |  | ok |  | `` |
+| 5 | `warehouse_schema` |  | ok |  | `` |
+| 6 | `run_check` | test:not_null_stg_orders_amount | pass | 0 | `SELECT * FROM stg_orders WHERE amount IS NULL;` |
+| 7 | `run_check` | contract:dim_customer_grain | pass | 0 | `SELECT * FROM dim_customer GROUP BY customer_id HAVING COUNT(*) > 1;` |
+| 8 | `run_check` | contract:orders_amount | pass | 0 | `SELECT * FROM stg_orders WHERE amount < 0;` |
+| 9 | `run_check` | contract:dim_customer_grain | pass | 0 | `SELECT * FROM mart_customers GROUP BY customer_id HAVING COUNT(*) > 1;` |
 
 ## 1. `lgnemo check stg_orders.amount --change "switch to integer cents" --provider nvidia` (302 s)
 
