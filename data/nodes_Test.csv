@@ -1,0 +1,7 @@
+id,name,last_run_at,status
+test:not_null_stg_orders_amount,not_null_stg_orders_amount,2026-10-14T13:15:00Z,pass
+test:accepted_range_stg_orders_amount,accepted_range_stg_orders_amount,2026-10-14T13:15:00Z,pass
+test:not_null_stg_payments_amount,not_null_stg_payments_amount,2026-10-14T13:15:00Z,pass
+test:unique_stg_customers_customer_id,unique_stg_customers_customer_id,2026-10-14T13:15:00Z,pass
+test:unique_mart_customers_customer_id,unique_mart_customers_customer_id,2026-10-14T11:00:00Z,fail
+test:freshness_mart_finance_revenue,freshness_mart_finance_revenue,2026-10-14T10:05:00Z,pass

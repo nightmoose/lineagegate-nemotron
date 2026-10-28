@@ -1,0 +1,5 @@
+src_label,src,dst_label,dst
+Incident,incident:INC-0802,Contract,contract:orders_amount
+Incident,incident:INC-0916,Contract,contract:customers_identity
+Incident,incident:INC-0917,Contract,contract:dim_customer_grain
+Incident,incident:INC-0930,Contract,contract:finance_revenue_freshness

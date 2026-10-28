@@ -1,0 +1,9 @@
+id,name,email,on_call,role,slack
+person:priya.raman,Priya Raman,priya.raman@acme.example,true,Analytics Engineering Lead,@priya
+person:marcus.lee,Marcus Lee,marcus.lee@acme.example,false,Analytics Engineer,@marcus
+person:dana.okafor,Dana Okafor,dana.okafor@acme.example,false,Data Platform Lead,@dana
+person:sam.rivera,Sam Rivera,sam.rivera@acme.example,true,Data Engineer,@sam
+person:jules.chen,Jules Chen,jules.chen@acme.example,true,Customer Analytics Lead,@jules
+person:ana.petrova,Ana Petrova,ana.petrova@acme.example,false,Analytics Engineer,@ana
+person:tom.becker,Tom Becker,tom.becker@acme.example,true,Growth Analytics Lead,@tom
+person:lena.ortiz,Lena Ortiz,lena.ortiz@acme.example,false,Data Analyst,@lena

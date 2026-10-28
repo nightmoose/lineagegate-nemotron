@@ -1,0 +1,10 @@
+id,name,kind,last_error,last_run_at,schedule,status
+job:ingest_shopify,ingest_shopify,ingestion,,2026-10-14T13:00:00Z,*/30 * * * *,success
+job:ingest_stripe,ingest_stripe,ingestion,,2026-10-14T13:00:00Z,0 * * * *,success
+job:ingest_crm,ingest_crm,ingestion,,2026-10-14T13:00:00Z,0 */4 * * *,success
+job:ingest_zendesk,ingest_zendesk,ingestion,,2026-10-14T13:00:00Z,0 * * * *,success
+job:ingest_ads,ingest_ads,ingestion,,2026-10-14T13:00:00Z,0 5 * * *,success
+job:dbt_hourly_core,dbt_hourly_core,dbt,,2026-10-14T13:15:00Z,15 * * * *,success
+job:dbt_finance_daily,dbt_finance_daily,dbt,,2026-10-14T10:00:00Z,0 6 * * *,success
+job:dbt_mart_customers_daily,dbt_mart_customers_daily,dbt,dbt test unique_mart_customers_customer_id failed: 37 duplicate customer_id values,2026-10-14T11:00:00Z,0 7 * * *,failed
+job:refresh_bi_dashboards,refresh_bi_dashboards,bi_refresh,,2026-10-14T11:30:00Z,30 7 * * *,success

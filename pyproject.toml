@@ -1,0 +1,23 @@
+[project]
+name = "lineagegate-nemotron"
+version = "0.1.0"
+description = "Data-contract coding agent on NVIDIA Nemotron via Nebius Token Factory"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+lgnemo = "lgnemo.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

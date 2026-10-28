@@ -1,0 +1,9 @@
+src_label,src,dst_label,dst
+Person,person:priya.raman,Team,team:finance_analytics
+Person,person:marcus.lee,Team,team:finance_analytics
+Person,person:dana.okafor,Team,team:data_platform
+Person,person:sam.rivera,Team,team:data_platform
+Person,person:jules.chen,Team,team:customer_analytics
+Person,person:ana.petrova,Team,team:customer_analytics
+Person,person:tom.becker,Team,team:growth_analytics
+Person,person:lena.ortiz,Team,team:growth_analytics

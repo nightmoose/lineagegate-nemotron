@@ -1,0 +1,7 @@
+src_label,src,dst_label,dst
+Job,job:ingest_shopify,Table,table:raw.shopify_orders
+Job,job:ingest_shopify,Table,table:raw.shopify_order_items
+Job,job:ingest_stripe,Table,table:raw.stripe_payments
+Job,job:ingest_crm,Table,table:raw.crm_customers
+Job,job:ingest_zendesk,Table,table:raw.zendesk_tickets
+Job,job:ingest_ads,Table,table:raw.ad_spend

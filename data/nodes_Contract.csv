@@ -1,0 +1,6 @@
+id,name,spec,status,title,version
+contract:orders_amount,orders_amount,"amount is decimal(18,2) in USD dollars (not cents); not null; >= 0",active,Orders amount contract,2.1
+contract:payments_amount,payments_amount,"amount is decimal(18,2) in USD dollars; not null",active,Payments amount contract,1.3
+contract:customers_identity,customers_identity,customer_id is unique and not null; sourced from CRM,active,Customer identity contract,1.0
+contract:dim_customer_grain,dim_customer_grain,exactly one row per customer_id in dim_customer and mart_customers,active,dim_customer grain contract,1.2
+contract:finance_revenue_freshness,finance_revenue_freshness,mart_finance_revenue refreshed by 07:00 ET daily (24h max staleness),active,Finance revenue freshness SLA,1.0
