@@ -58,10 +58,9 @@ pytest -q                            # 11 tests, no key needed
 
 ## Live run status
 
-- **Token Factory path is fully implemented:** `--provider nebius` + `NEBIUS_API_KEY`, default model `nvidia/nemotron-3-super-120b-a12b`.
-- **The live demo ran on the same Nemotron family via NVIDIA's OpenAI-compatible API** (`--provider nvidia`, default
-  model `nvidia/nemotron-3-ultra-550b-a55b`), because Token Factory requires card verification before any credits can be
-  used, and the hackathon credits are pending on that step. See [docs/live-run-sample.md](docs/live-run-sample.md):
+- **Token Factory provider is implemented and keyed:** `--provider nebius` + `NEBIUS_API_KEY`, default model `nvidia/nemotron-3-super-120b-a12b`.
+- **The live demo ran Nemotron through NVIDIA's OpenAI-compatible API** (`--provider nvidia`, default model
+  `nvidia/nemotron-3-ultra-550b-a55b`) while our Token Factory promo credit is pending with Nebius support. See [docs/live-run-sample.md](docs/live-run-sample.md):
   Nemotron Ultra planned each run, wrote the SQL checks and recommended HOLD. It caught **both planted defects live**: cents-vs-dollars on `stg_orders.amount` (2 rows, ~5 min) and the duplicated `customer_id` on `stg_customers.customer_id` (~2 min).
 
 ## How Nemotron and Token Factory are used
