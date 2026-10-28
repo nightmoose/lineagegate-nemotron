@@ -103,3 +103,20 @@ def test_cli_offline_writes_report(tmp_path):
     assert main(["check", "stg_orders.amount", "--offline", "--out", str(tmp_path)]) == 0
     rep = (tmp_path / "report.md").read_text()
     assert "FAIL" in rep and (tmp_path / "checks" / "orders_amount_dollars.sql").exists()
+
+
+def test_unchecked_contracts_flags_skipped_governing_contracts():
+    from lgnemo.agent import unchecked_contracts
+    trace = [
+        {"tool": "impact", "args": {}, "result": {"contracts": [
+            {"id": "contract:orders_amount", "spec": "amount in USD dollars; not null"},
+            {"id": "contract:finance_revenue_freshness", "spec": "refreshed by 07:00 ET daily"},
+            {"id": "contract:dim_customer_grain", "spec": "one row per customer_id"}]}},
+        # live Nemotron checked a look-alike dbt test id instead of the contract
+        {"tool": "run_check", "args": {"contract": "test:not_null_stg_orders_amount"}, "result": {"status": "pass"}},
+        {"tool": "run_check", "args": {"contract": "contract:dim_customer_grain"}, "result": {"status": "error"}},
+    ]
+    assert unchecked_contracts(trace) == ["contract:orders_amount", "contract:dim_customer_grain"]
+    trace.append({"tool": "run_check", "args": {"contract": "contract:orders_amount"}, "result": {"status": "fail"}})
+    trace.append({"tool": "run_check", "args": {"contract": "contract:dim_customer_grain"}, "result": {"status": "pass"}})
+    assert unchecked_contracts(trace) == []

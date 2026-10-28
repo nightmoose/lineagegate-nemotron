@@ -18,7 +18,7 @@ FAST_MODEL = os.environ.get("NEMOTRON_FAST_MODEL", "nvidia/NVIDIA-Nemotron-3-Nan
 PROVIDERS = {
     "nebius": (NEBIUS_BASE_URL, "NEBIUS_API_KEY", DEFAULT_MODEL),
     "nvidia": (os.environ.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1"), "NVIDIA_API_KEY",
-               DEFAULT_MODEL),
+               os.environ.get("NEMOTRON_MODEL", "nvidia/nemotron-3-ultra-550b-a55b")),
     "openrouter": (os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"), "OPENROUTER_API_KEY",
                    os.environ.get("NEMOTRON_MODEL", "nvidia/nemotron-3-ultra-550b-a55b:free")),
 }

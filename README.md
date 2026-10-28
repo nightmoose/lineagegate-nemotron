@@ -4,7 +4,7 @@
 change. It works out the blast radius from a lineage + contracts graph, **writes SQL contract checks, runs them,
 reads the errors and fixes its own SQL**, then tells you whether it's safe to ship and who to notify.
 
-Track: **Coding and Agentic Engineering** · Model: `nvidia/nemotron-3-super-120b-a12b` (configurable) · License: MIT
+Track: **Coding and Agentic Engineering** · Model: NVIDIA Nemotron 3 (Super on Token Factory, Ultra `nvidia/nemotron-3-ultra-550b-a55b` on the NVIDIA API; configurable) · License: MIT
 
 ```
 $ lgnemo check stg_orders.amount --change "switch to integer cents"
@@ -44,7 +44,7 @@ python3 -m venv .venv && . .venv/bin/activate && pip install -e . pytest
 export NEBIUS_API_KEY=...            # https://tokenfactory.nebius.com -> API keys
 lgnemo check stg_orders.amount --change "switch to integer cents"
 lgnemo check stg_customers.customer_id --change "merge CRM and Shopify customer ids"
-pytest -q                            # 9 tests, no key needed
+pytest -q                            # 11 tests, no key needed
 ```
 
 | Env var | Default |
@@ -52,9 +52,17 @@ pytest -q                            # 9 tests, no key needed
 | `NEBIUS_API_KEY` | required for live runs (without it the CLI falls back to `--offline`) |
 | `NEBIUS_BASE_URL` | `https://api.tokenfactory.nebius.com/v1` |
 | `--provider nvidia\|openrouter\|nebius` | alternate OpenAI-compatible host (default `nebius`); `nvidia` uses `https://integrate.api.nvidia.com/v1` + `NVIDIA_API_KEY`, `openrouter` uses `https://openrouter.ai/api/v1` + `OPENROUTER_API_KEY` (default model `nvidia/nemotron-3-ultra-550b-a55b:free`) |
-| `NEMOTRON_MODEL` | `nvidia/nemotron-3-super-120b-a12b` (override with `--model`, e.g. Nemotron 3 Nano or Ultra) |
+| `NEMOTRON_MODEL` | `nvidia/nemotron-3-super-120b-a12b` on nebius, `nvidia/nemotron-3-ultra-550b-a55b` on nvidia (override with `--model`, e.g. Nemotron 3 Nano or Ultra) |
 
 `--offline` uses a scripted provider that speaks the same tool protocol. It exists for tests and CI only.
+
+## Live run status
+
+- **Token Factory path is fully implemented:** `--provider nebius` + `NEBIUS_API_KEY`, default model `nvidia/nemotron-3-super-120b-a12b`.
+- **The live demo ran on the same Nemotron family via NVIDIA's OpenAI-compatible API** (`--provider nvidia`, default
+  model `nvidia/nemotron-3-ultra-550b-a55b`), because Token Factory requires card verification before any credits can be
+  used, and the hackathon credits are pending on that step. See [docs/live-run-sample.md](docs/live-run-sample.md):
+  Nemotron Ultra planned the run, wrote 4 SQL checks, caught the planted cents defect (2 rows) and recommended HOLD (~2.7 min).
 
 ## How Nemotron and Token Factory are used
 
