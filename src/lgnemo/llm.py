@@ -14,14 +14,29 @@ DEFAULT_MODEL = os.environ.get("NEMOTRON_MODEL", "nvidia/nemotron-3-super-120b-a
 FAST_MODEL = os.environ.get("NEMOTRON_FAST_MODEL", "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B")
 
 
-class NebiusProvider:
-    name = "nebius"
+# OpenAI-compatible hosts that serve Nemotron: name -> (base URL, API-key env var, default model)
+PROVIDERS = {
+    "nebius": (NEBIUS_BASE_URL, "NEBIUS_API_KEY", DEFAULT_MODEL),
+    "nvidia": (os.environ.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1"), "NVIDIA_API_KEY",
+               DEFAULT_MODEL),
+    "openrouter": (os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"), "OPENROUTER_API_KEY",
+                   os.environ.get("NEMOTRON_MODEL", "nvidia/nemotron-3-ultra-550b-a55b:free")),
+}
 
-    def __init__(self, model: str = DEFAULT_MODEL, api_key: str | None = None, base_url: str = NEBIUS_BASE_URL):
-        self.model, self.base_url = model, base_url.rstrip("/")
-        self.api_key = api_key or os.environ.get("NEBIUS_API_KEY")
+
+class NebiusProvider:
+    """OpenAI-compatible chat client. Named for the primary host; `provider=` selects another."""
+
+    def __init__(self, model: str | None = None, api_key: str | None = None, base_url: str | None = None,
+                 provider: str = "nebius"):
+        if provider not in PROVIDERS:
+            raise ValueError(f"unknown provider {provider!r}; choose from {sorted(PROVIDERS)}")
+        default_url, self.key_env, default_model = PROVIDERS[provider]
+        self.name = provider
+        self.model, self.base_url = model or default_model, (base_url or default_url).rstrip("/")
+        self.api_key = api_key or os.environ.get(self.key_env)
         if not self.api_key:
-            raise RuntimeError("NEBIUS_API_KEY is not set (get one at https://tokenfactory.nebius.com)")
+            raise RuntimeError(f"{self.key_env} is not set")
 
     def chat(self, messages: list[dict], tools: list[dict]) -> dict:
         body = {"model": self.model, "messages": messages, "tools": tools, "tool_choice": "auto", "temperature": 0.2}

@@ -10,7 +10,7 @@ from pathlib import Path
 
 from . import agent, warehouse
 from .graph import Graph
-from .llm import DEFAULT_MODEL, NebiusProvider, ScriptedProvider
+from .llm import PROVIDERS, NebiusProvider, ScriptedProvider
 from .tools import Toolbox
 
 
@@ -38,18 +38,21 @@ def main(argv=None) -> int:
     c = sub.add_parser("check", help="impact + write/run contract checks for a proposed change")
     c.add_argument("asset")
     c.add_argument("--change", default="change its type or semantics")
-    c.add_argument("--model", default=DEFAULT_MODEL)
+    c.add_argument("--provider", choices=sorted(PROVIDERS), default="nebius",
+                   help="OpenAI-compatible host: sets base URL and API-key env var")
+    c.add_argument("--model", default=None, help="model id (default depends on --provider)")
     c.add_argument("--offline", action="store_true", help="scripted provider, no API key needed")
     c.add_argument("--out", default="out")
     c.add_argument("--json", action="store_true")
     a = p.parse_args(argv)
 
-    if a.offline or not os.environ.get("NEBIUS_API_KEY"):
+    key_env = PROVIDERS[a.provider][1]
+    if a.offline or not os.environ.get(key_env):
         if not a.offline:
-            print("NEBIUS_API_KEY not set; using --offline scripted provider.", file=sys.stderr)
+            print(f"{key_env} not set; using --offline scripted provider.", file=sys.stderr)
         provider = ScriptedProvider()
     else:
-        provider = NebiusProvider(model=a.model)
+        provider = NebiusProvider(model=a.model, provider=a.provider)
     g = Graph.load()
     out = Path(a.out)
     tools = Toolbox(g, warehouse.build(g), out_dir=out)

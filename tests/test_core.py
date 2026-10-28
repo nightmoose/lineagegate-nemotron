@@ -80,6 +80,25 @@ def test_nebius_provider_request_shape(monkeypatch):
     assert sent["auth"] == "Bearer test-key"
 
 
+def test_alternate_providers(monkeypatch):
+    sent = []
+
+    class Resp:
+        def __enter__(self): return self
+        def __exit__(self, *a): pass
+        def read(self): return json.dumps({"choices": [{"message": {"role": "assistant", "content": "ok"}}]}).encode()
+
+    monkeypatch.setattr("urllib.request.urlopen", lambda req, timeout: sent.append(req) or Resp())
+    monkeypatch.setenv("NVIDIA_API_KEY", "nv")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "or")
+    NebiusProvider(provider="nvidia").chat([], [])
+    NebiusProvider(provider="openrouter").chat([], [])
+    assert sent[0].full_url == "https://integrate.api.nvidia.com/v1/chat/completions"
+    assert sent[0].headers["Authorization"] == "Bearer nv"
+    assert sent[1].full_url == "https://openrouter.ai/api/v1/chat/completions"
+    assert sent[1].headers["Authorization"] == "Bearer or" and "emotron" in json.loads(sent[1].data)["model"]
+
+
 def test_cli_offline_writes_report(tmp_path):
     assert main(["check", "stg_orders.amount", "--offline", "--out", str(tmp_path)]) == 0
     rep = (tmp_path / "report.md").read_text()

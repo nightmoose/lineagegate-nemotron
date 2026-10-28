@@ -51,6 +51,7 @@ pytest -q                            # 9 tests, no key needed
 |---|---|
 | `NEBIUS_API_KEY` | required for live runs (without it the CLI falls back to `--offline`) |
 | `NEBIUS_BASE_URL` | `https://api.tokenfactory.nebius.com/v1` |
+| `--provider nvidia\|openrouter\|nebius` | alternate OpenAI-compatible host (default `nebius`); `nvidia` uses `https://integrate.api.nvidia.com/v1` + `NVIDIA_API_KEY`, `openrouter` uses `https://openrouter.ai/api/v1` + `OPENROUTER_API_KEY` (default model `nvidia/nemotron-3-ultra-550b-a55b:free`) |
 | `NEMOTRON_MODEL` | `nvidia/nemotron-3-super-120b-a12b` (override with `--model`, e.g. Nemotron 3 Nano or Ultra) |
 
 `--offline` uses a scripted provider that speaks the same tool protocol. It exists for tests and CI only.
