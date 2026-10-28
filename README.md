@@ -62,7 +62,7 @@ pytest -q                            # 11 tests, no key needed
 - **The live demo ran on the same Nemotron family via NVIDIA's OpenAI-compatible API** (`--provider nvidia`, default
   model `nvidia/nemotron-3-ultra-550b-a55b`), because Token Factory requires card verification before any credits can be
   used, and the hackathon credits are pending on that step. See [docs/live-run-sample.md](docs/live-run-sample.md):
-  Nemotron Ultra planned the run, wrote 4 SQL checks, caught the planted cents defect (2 rows) and recommended HOLD (~2.7 min).
+  Nemotron Ultra planned each run, wrote the SQL checks and recommended HOLD. It caught **both planted defects live**: cents-vs-dollars on `stg_orders.amount` (2 rows, ~5 min) and the duplicated `customer_id` on `stg_customers.customer_id` (~2 min).
 
 ## How Nemotron and Token Factory are used
 

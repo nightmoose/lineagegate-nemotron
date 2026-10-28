@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 
 from .tools import TOOL_SPECS, Toolbox
@@ -29,33 +30,42 @@ SQL_SKIP = ("fresh", "refreshed", "sla", "staleness")
 
 
 def unchecked_contracts(trace: list[dict]) -> list[str]:
-    """SQL-checkable contracts returned by `impact` that have no run_check with status pass/fail yet.
+    """SQL-checkable contracts (or contract/table pairs) from `impact` with no completed run_check yet.
 
-    Live Nemotron runs sometimes check look-alike dbt tests instead of the governing contracts; the loop
-    uses this to send one reminder before accepting the final answer."""
-    contracts: dict[str, str] = {}
+    Live Nemotron runs sometimes check look-alike dbt tests instead of the governing contracts, or check only one
+    of the tables a contract governs; the loop uses this to send one reminder before accepting the final answer."""
+    contracts: dict[str, dict] = {}
     for t in trace:
         if t["tool"] == "impact":
             for c in t["result"].get("contracts", []):
-                contracts[c["id"]] = c.get("spec", "")
-    done = {t["args"].get("contract") for t in trace
-            if t["tool"] == "run_check" and t["result"].get("status") in ("pass", "fail")}
-    return [cid for cid, spec in contracts.items()
-            if cid not in done and not any(k in spec.lower() for k in SQL_SKIP)]
+                contracts[c["id"]] = c
+    done = [t for t in trace if t["tool"] == "run_check" and t["result"].get("status") in ("pass", "fail")]
+    missing = []
+    for cid, c in contracts.items():
+        if any(k in c.get("spec", "").lower() for k in SQL_SKIP):
+            continue
+        sqls = [(t["args"].get("sql") or "").lower() for t in done if t["args"].get("contract") == cid]
+        if not sqls:
+            missing.append(cid)
+            continue
+        for tab in c.get("applies_to", []):
+            if not any(re.search(rf"\b{re.escape(tab.lower())}\b", q) for q in sqls):
+                missing.append(f"{cid} on table {tab}")
+    return missing
 
 
 def run(provider, tools: Toolbox, request: str, max_turns: int = 16) -> Run:
     messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": request}]
     out = Run()
-    nudged = False
+    nudges = 0
     for _ in range(max_turns):
         msg = provider.chat(messages, TOOL_SPECS)
         calls = msg.get("tool_calls") or []
         messages.append({"role": "assistant", "content": msg.get("content"), **({"tool_calls": calls} if calls else {})})
         if not calls:
             missing = unchecked_contracts(out.trace)
-            if missing and not nudged:
-                nudged = True
+            if missing and nudges < 2:
+                nudges += 1
                 messages.append({"role": "user", "content": (
                     "Before finishing: these contracts from `impact` have no completed run_check yet: "
                     + ", ".join(missing) + ". Write and run a SQL check for each (use that exact contract id), "

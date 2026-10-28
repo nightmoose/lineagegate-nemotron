@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import json
 import os
+import time
+import urllib.error
 import urllib.request
 
 NEBIUS_BASE_URL = os.environ.get("NEBIUS_BASE_URL", "https://api.tokenfactory.nebius.com/v1")
@@ -43,8 +45,15 @@ class NebiusProvider:
         req = urllib.request.Request(
             f"{self.base_url}/chat/completions", data=json.dumps(body).encode(),
             headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=180) as r:
-            data = json.loads(r.read())
+        for attempt in range(3):  # live endpoints occasionally time out or return a transient 5xx
+            try:
+                with urllib.request.urlopen(req, timeout=300) as r:
+                    data = json.loads(r.read())
+                break
+            except (TimeoutError, urllib.error.HTTPError) as e:
+                if attempt == 2 or (isinstance(e, urllib.error.HTTPError) and e.code < 500):
+                    raise
+                time.sleep(5 * (attempt + 1))
         return data["choices"][0]["message"]
 
 

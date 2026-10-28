@@ -120,3 +120,20 @@ def test_unchecked_contracts_flags_skipped_governing_contracts():
     trace.append({"tool": "run_check", "args": {"contract": "contract:orders_amount"}, "result": {"status": "fail"}})
     trace.append({"tool": "run_check", "args": {"contract": "contract:dim_customer_grain"}, "result": {"status": "pass"}})
     assert unchecked_contracts(trace) == []
+
+
+def test_unchecked_contracts_requires_every_governed_table():
+    from lgnemo.agent import unchecked_contracts
+    c = {"id": "contract:dim_customer_grain", "spec": "one row per customer_id",
+         "applies_to": ["dim_customer", "mart_customers"]}
+    trace = [{"tool": "impact", "args": {}, "result": {"contracts": [c]}},
+             {"tool": "run_check", "args": {"contract": c["id"], "sql": "SELECT customer_id FROM dim_customer"},
+              "result": {"status": "pass"}}]
+    assert unchecked_contracts(trace) == ["contract:dim_customer_grain on table mart_customers"]
+
+
+def test_impact_contracts_list_governed_tables():
+    g, _ = setup()
+    r = g.impact("stg_customers.customer_id")
+    ids = {c["id"]: c for c in r["contracts"]}
+    assert "stg_customers" in ids["contract:customers_identity"]["applies_to"]

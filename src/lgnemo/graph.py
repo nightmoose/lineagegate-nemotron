@@ -73,8 +73,18 @@ class Graph:
         return {
             "asset": start,
             "impacted": [{"id": n, "label": self.nodes[n]["label"], "path": paths[n]} for n in impacted],
-            "contracts": [{"id": c, "spec": self.nodes[c]["spec"]} for c in contracts],
+            "contracts": [{"id": c, "spec": self.nodes[c]["spec"], "applies_to": self.contract_tables(c)}
+                          for c in contracts],
         }
+
+    def contract_tables(self, contract: str) -> list[str]:
+        """Warehouse tables a contract governs (from Model/Column GOVERNED_BY edges)."""
+        tabs = set()
+        for n, node in self.nodes.items():
+            if node["label"] in ("Model", "Column") and contract in self.out(n, "GOVERNED_BY"):
+                ref = n.split(":", 1)[1]
+                tabs.add((ref.rsplit(".", 1)[0] if node["label"] == "Column" else ref).replace(".", "__"))
+        return sorted(tabs)
 
     def owners(self, ref: str) -> dict:
         nid = self.resolve(ref)
