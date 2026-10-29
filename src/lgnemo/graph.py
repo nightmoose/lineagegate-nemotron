@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import re
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -73,7 +74,8 @@ class Graph:
         return {
             "asset": start,
             "impacted": [{"id": n, "label": self.nodes[n]["label"], "path": paths[n]} for n in impacted],
-            "contracts": [{"id": c, "spec": self.nodes[c]["spec"], "applies_to": self.contract_tables(c)}
+            "contracts": [{"id": c, "spec": self.nodes[c]["spec"], "applies_to": self.contract_tables(c),
+                           "rules": self.contract_rules(c)}
                           for c in contracts],
         }
 
@@ -85,6 +87,40 @@ class Graph:
                 ref = n.split(":", 1)[1]
                 tabs.add((ref.rsplit(".", 1)[0] if node["label"] == "Column" else ref).replace(".", "__"))
         return sorted(tabs)
+
+    def contract_columns(self, contract: str) -> list[tuple[str, str]]:
+        """(warehouse table, column) pairs a contract governs directly."""
+        cols = []
+        for n, node in self.nodes.items():
+            if node["label"] == "Column" and contract in self.out(n, "GOVERNED_BY"):
+                tab, col = n.split(":", 1)[1].rsplit(".", 1)
+                cols.append((tab.replace(".", "__"), col))
+        return sorted(cols)
+
+    def contract_rules(self, contract: str) -> list[dict]:
+        """Ready-to-run violation SQL for the machine-checkable clauses of a contract spec, plus the dbt tests
+        that enforce it. Parsed generically from the spec text (not-null, lower and upper numeric bounds), so the
+        agent gets a concrete starting query for e.g. accepted_range tests instead of skipping them."""
+        spec = self.nodes[contract].get("spec", "").lower()
+        num = r"(-?\d[\d,]*(?:\.\d+)?)"
+        lo = re.search(r"(?:>=|at least|minimum(?: of)?)\s*" + num, spec)
+        hi = re.search(r"(?:<=|at most|maximum(?: of)?|no more than)\s*" + num, spec)
+        lo, hi = (float(m.group(1).replace(",", "")) if m else None for m in (lo, hi))
+        fmt = lambda v: f"{v:g}"
+        tests = [t for t in self.inc(contract, "GOVERNED_BY") if t.startswith("test:")]
+        rules = []
+        for tab, col in self.contract_columns(contract):
+            cond = {}
+            if "not null" in spec:
+                cond["not_null"] = f"{col} IS NULL"
+            bounds = ([f"{col} < {fmt(lo)}"] if lo is not None else []) + ([f"{col} > {fmt(hi)}"] if hi is not None else [])
+            if bounds:
+                cond["accepted_range"] = " OR ".join(bounds)
+            for kind, where in cond.items():
+                enforced = [t for t in tests if kind in t and col in t]
+                rules.append({"rule": kind, "table": tab, "column": col,
+                              "sql": f"SELECT * FROM {tab} WHERE {where}", "tests": enforced})
+        return rules
 
     def owners(self, ref: str) -> dict:
         nid = self.resolve(ref)

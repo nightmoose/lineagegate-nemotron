@@ -137,3 +137,39 @@ def test_impact_contracts_list_governed_tables():
     r = g.impact("stg_customers.customer_id")
     ids = {c["id"]: c for c in r["contracts"]}
     assert "stg_customers" in ids["contract:customers_identity"]["applies_to"]
+
+
+def test_impact_contract_rules_give_ready_range_sql():
+    g, tb = setup()
+    c = {c["id"]: c for c in g.impact("stg_orders.amount")["contracts"]}["contract:orders_amount"]
+    rng = {r["rule"]: r for r in c["rules"]}["accepted_range"]
+    assert rng["tests"] == ["test:accepted_range_stg_orders_amount"]
+    assert tb.run_check("contract:orders_amount", "r", rng["sql"])["violations"] == 2  # planted cents rows
+
+
+def test_unchecked_contracts_names_skipped_range_test():
+    from lgnemo.agent import unchecked_contracts
+    g, _ = setup()
+    impact = g.impact("stg_orders.amount")
+    trace = [{"tool": "impact", "args": {}, "result": impact},
+             {"tool": "run_check", "args": {"contract": "test:not_null_stg_orders_amount",
+                                            "sql": "SELECT * FROM stg_orders WHERE amount IS NULL;"},
+              "result": {"status": "pass"}},
+             {"tool": "run_check", "args": {"contract": "contract:orders_amount",
+                                            "sql": "SELECT * FROM stg_orders WHERE amount < 0;"},
+              "result": {"status": "pass"}},
+             {"tool": "run_check", "args": {"contract": "contract:dim_customer_grain",
+                                            "sql": "SELECT 1 FROM dim_customer JOIN mart_customers"},
+              "result": {"status": "pass"}}]
+    missing = unchecked_contracts(trace)
+    assert len(missing) == 1 and missing[0].startswith("test:accepted_range_stg_orders_amount")
+    assert "amount > 10000" in missing[0]
+    # a rescaled bound (Super run 2 used 1,000,000) does not count as the contract's range
+    trace.append({"tool": "run_check", "args": {"contract": "test:accepted_range_stg_orders_amount",
+                                                "sql": "SELECT * FROM stg_orders WHERE amount < 0 OR amount > 1000000"},
+                  "result": {"status": "pass"}})
+    assert len(unchecked_contracts(trace)) == 1
+    trace.append({"tool": "run_check", "args": {"contract": "test:accepted_range_stg_orders_amount",
+                                                "sql": "select * from stg_orders where amount>10,000.00"},
+                  "result": {"status": "fail"}})
+    assert unchecked_contracts(trace) == []

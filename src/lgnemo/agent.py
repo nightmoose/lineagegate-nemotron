@@ -14,7 +14,11 @@ Given a proposed change to a warehouse asset:
 3. For EACH contract that a SQL query can check (skip pure freshness/SLA contracts and say so), write a SQL check that
    SELECTs violating rows, then call `run_check`. Use the exact `contract:` id from `impact`. Check every table the
    spec names, on the table that owns the column. For unit rules (e.g. "dollars not cents") also flag implausible
-   magnitudes for that unit (e.g. a single order above 10,000 USD). If it returns status=error, read the error, fix the SQL, retry (max 3).
+   magnitudes for that unit (e.g. a single order above 10,000 USD). Each contract from `impact` lists `rules`: ready-made
+   violation SQL for its machine-checkable clauses (not-null, min/max bounds, accepted_range) and the dbt tests that
+   enforce them. Run every rule (adapt the SQL if needed); never skip a range test for lack of bounds when a rule has them.
+   Check the warehouse data as it is today against the contract exactly as written (keep its bounds and units; do
+   not rescale them for the proposed change). If it returns status=error, read the error, fix the SQL, retry (max 3).
 4. Call `owners` on the changed asset's model/table.
 5. Finish with a short report: impacted assets (cite lineage paths), each check with pass/fail/violations, who to notify,
    and a ship / hold recommendation. Only state facts that came from tool results."""
@@ -51,7 +55,28 @@ def unchecked_contracts(trace: list[dict]) -> list[str]:
         for tab in c.get("applies_to", []):
             if not any(re.search(rf"\b{re.escape(tab.lower())}\b", q) for q in sqls):
                 missing.append(f"{cid} on table {tab}")
+        for r in c.get("rules", []):
+            ids = {cid, *r.get("tests", [])}
+            rsqls = [(t["args"].get("sql") or "") for t in done if t["args"].get("contract") in ids]
+            if not _rule_covered(r, rsqls):
+                who = ", ".join(r.get("tests") or []) or cid
+                missing.append(f"{who} ({r['rule']} rule of {cid} on {r['table']}.{r['column']}; "
+                               f"suggested SQL: {r['sql']})")
     return missing
+
+
+def _norm(sql: str) -> str:
+    """Lowercase, drop whitespace/commas/parens/semicolons, and write 10000.0 as 10000."""
+    s = re.sub(r"[\s,;()]", "", sql.lower())
+    return re.sub(r"(\d+)\.0+(?!\d)", r"\1", s)
+
+
+def _rule_covered(rule: dict, sqls: list[str]) -> bool:
+    """Every predicate of the rule's suggested WHERE clause appears in some completed check's SQL."""
+    preds = re.split(r"\s+OR\s+", rule["sql"].split(" WHERE ", 1)[1])
+    qs = [_norm(q) for q in sqls]
+    pats = [re.escape(_norm(p)) + (r"(?![\d.])" if p[-1].isdigit() else "") for p in preds]
+    return all(any(re.search(pat, q) for q in qs) for pat in pats)
 
 
 def run(provider, tools: Toolbox, request: str, max_turns: int = 16) -> Run:

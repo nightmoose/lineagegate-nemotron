@@ -1,30 +1,33 @@
 # Live run samples (sanitized)
 
-- **Date:** 2026-10-28 (America/New_York)
+- **Date:** 2026-10-28 (runs 1–2), 2026-10-29 (run 0) (America/New_York)
 - **Providers:** Nebius Token Factory (`--provider nebius`, `https://api.tokenfactory.nebius.com/v1`, model `nvidia/nemotron-3-super-120b-a12b`) for run 0; NVIDIA API (`--provider nvidia`, `https://integrate.api.nvidia.com/v1`, OpenAI-compatible tool calling)
-- **Model:** `nvidia/nemotron-3-ultra-550b-a55b`
-- No API keys appear in this file. Runs 1–2 below used NVIDIA's endpoint, the alternate host; run 0 is the Token Factory live demo.
+- **Model:** `nvidia/nemotron-3-super-120b-a12b` (run 0), `nvidia/nemotron-3-ultra-550b-a55b` (runs 1–2)
+- No API keys appear in this file. Runs 1–2 below used NVIDIA's endpoint, the alternate host; run 0 is the Token Factory live demo (Oct 29).
 
 Both planted defects were caught live, each by its own command (they sit on different lineage branches).
 
-## 0. Token Factory: `lgnemo check stg_orders.amount --change "switch to integer cents" --provider nebius` (40 s)
+## 0. Token Factory: `lgnemo check stg_orders.amount --change "switch to integer cents" --provider nebius` (34 s)
 
-Nemotron Super on Nebius Token Factory: 9 tool calls, 12 model calls, 79,915 tokens (75,381 prompt / 4,534 completion).
-Verdict: **HOLD** — the switch to cents makes every downstream dollar field 100× too large; notify @priya (on-call) and @marcus
-and the `finance_analytics` team. Super ran the null, grain and non-negative checks below; the `accepted_range` test (which
-surfaces the planted cents-vs-dollars rows) was not run in this pass. Ultra's run 1 below runs it and flags the 2 rows.
+- **Date:** 2026-10-29 (America/New_York)
+
+Nemotron Super on Nebius Token Factory: 8 tool calls, 11 model calls, 46,241 tokens (42,902 prompt / 3,339 completion).
+The planted **cents-vs-dollars defect: caught (2 rows)** by `test:accepted_range_stg_orders_amount` on `stg_orders`
+(`ord_0002` = 39529, `ord_0016` = 11426, both above the contract's 10,000 USD ceiling).
+Verdict: **HOLD** — notify @priya (on-call), @marcus and the `finance_analytics` team.
+`impact` now attaches ready-to-run `rules` to each contract (not-null and accepted-range SQL parsed from the contract
+spec, with the dbt tests that enforce them), and the coverage reminder names any rule whose bounds no check has used yet.
 
 | # | tool | contract | status | rows | SQL written by the model |
 |---|---|---|---|---|---|
 | 1 | `impact` |  | ok |  | `` |
-| 2 | `owners` |  | ok |  | `` |
-| 3 | `impact` |  | ok |  | `` |
-| 4 | `impact` |  | ok |  | `` |
-| 5 | `warehouse_schema` |  | ok |  | `` |
-| 6 | `run_check` | test:not_null_stg_orders_amount | pass | 0 | `SELECT * FROM stg_orders WHERE amount IS NULL;` |
-| 7 | `run_check` | contract:dim_customer_grain | pass | 0 | `SELECT * FROM dim_customer GROUP BY customer_id HAVING COUNT(*) > 1;` |
-| 8 | `run_check` | contract:orders_amount | pass | 0 | `SELECT * FROM stg_orders WHERE amount < 0;` |
-| 9 | `run_check` | contract:dim_customer_grain | pass | 0 | `SELECT * FROM mart_customers GROUP BY customer_id HAVING COUNT(*) > 1;` |
+| 2 | `warehouse_schema` |  | ok |  | `` |
+| 3 | `owners` |  | ok |  | `` |
+| 4 | `run_check` | test:not_null_stg_orders_amount | pass | 0 | `SELECT * FROM stg_orders WHERE amount IS NULL` |
+| 5 | `run_check` | contract:dim_customer_grain | pass | 0 | `SELECT * FROM dim_customer GROUP BY customer_id HAVING COUNT(*) > 1` |
+| 6 | `run_check` | contract:orders_amount | pass | 0 | `SELECT * FROM stg_orders WHERE amount <= 0` |
+| 7 | `run_check` | contract:dim_customer_grain | pass | 0 | `SELECT * FROM mart_customers GROUP BY customer_id HAVING COUNT(*) > 1` |
+| 8 | `run_check` | test:accepted_range_stg_orders_amount | **fail** | **2** | `SELECT * FROM stg_orders WHERE amount < 0 OR amount > 10000` |
 
 ## 1. `lgnemo check stg_orders.amount --change "switch to integer cents" --provider nvidia` (302 s)
 
